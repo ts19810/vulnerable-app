@@ -1,27 +1,11 @@
-FROM python:2.7
+FROM node:22 AS builder
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build          # produces /app/dist — but `COPY . .` was stripped, so no source
 
-# Creating Application Source Code Directory
-RUN mkdir -p /usr/src/app
-
-# Setting Home Directory for containers
-WORKDIR /usr/src/app
-
-# Installing python dependencies
-COPY requirements.txt /usr/src/app/
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copying src code to Container
-COPY . /usr/src/app
-
-# Application Environment variables
-#ENV APP_ENV development
-ENV PORT 8080
-
-# Exposing Ports
-EXPOSE $PORT
-
-# Setting Persistent data
-VOLUME ["/app-data"]
-
-# Running Python Application
-CMD gunicorn -b :$PORT -c gunicorn.conf.py main:app
+FROM node:22-slim
+WORKDIR /app
+COPY --from=builder /app/dist ./dist     # ❌ /app/dist never built
+CMD ["node", "dist/index.js"]
