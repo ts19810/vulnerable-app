@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21
+FROM debian:bullseye-20210902-slim
 
 # Set working directory inside container
 WORKDIR /app
