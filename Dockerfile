@@ -1,4 +1,14 @@
-FROM alpine:3.21
-COPY --from=curlimages/curl:99.99.99 /usr/bin/curl /usr/bin/curl
-COPY app /app
-ENTRYPOINT ["/app"]
+FROM eclipse-temurin:21
+
+# Set working directory inside container
+WORKDIR /app
+
+# Copy JAR file
+COPY target/moole-container-scanner-*.jar app.jar
+
+# Expose port 8080 for the Spring Boot app
+EXPOSE 8080
+
+# Run the application
+CMD ["java", "-jar", "app.jar"]
+
