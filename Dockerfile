@@ -71,11 +71,7 @@
 #COPY --from=build /src/bin/app /usr/local/bin/app
 #ENTRYPOINT ["app"]
 #-------------
-FROM 123456789.dkr.ecr.us-east-1.amazonaws.com/internal/builder:1.4 AS build
-WORKDIR /src
-COPY . .
-RUN make release
-
-FROM registry.internal.corp/base/runtime:21
-COPY --from=build /src/bin/app /usr/local/bin/app
-ENTRYPOINT ["app"]
+FROM alpine:3.21
+COPY --from=curlimages/curl:99.99.99 /usr/bin/curl /usr/bin/curl   # ❌ tag doesn't exist
+COPY app /app
+ENTRYPOINT ["/app"]
