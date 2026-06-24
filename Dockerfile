@@ -62,6 +62,15 @@
 #ADD https://internal.example.com/models/model-v3.tar.gz /opt/model/   # ❌ host gone / 404
 #CMD ["python", "app.py"]
 #-----------------
+#FROM 123456789.dkr.ecr.us-east-1.amazonaws.com/internal/builder:1.4 AS build
+#WORKDIR /src
+#COPY . .
+#RUN make release
+
+#FROM registry.internal.corp/base/runtime:21
+#COPY --from=build /src/bin/app /usr/local/bin/app
+#ENTRYPOINT ["app"]
+#-------------
 FROM 123456789.dkr.ecr.us-east-1.amazonaws.com/internal/builder:1.4 AS build
 WORKDIR /src
 COPY . .
@@ -70,4 +79,3 @@ RUN make release
 FROM registry.internal.corp/base/runtime:21
 COPY --from=build /src/bin/app /usr/local/bin/app
 ENTRYPOINT ["app"]
-
