@@ -71,7 +71,23 @@
 #COPY --from=build /src/bin/app /usr/local/bin/app
 #ENTRYPOINT ["app"]
 #-------------
-FROM alpine:3.21
-COPY --from=curlimages/curl:99.99.99 /usr/bin/curl /usr/bin/curl   # ❌ tag doesn't exist
-COPY app /app
-ENTRYPOINT ["/app"]
+#FROM alpine:3.21
+#COPY --from=curlimages/curl:99.99.99 /usr/bin/curl /usr/bin/curl   # ❌ tag doesn't exist
+#COPY app /app
+#ENTRYPOINT ["/app"]
+
+#------------------
+FROM debian:12 AS build
+RUN <<EOF
+apt-get update
+apt-get install -y build-essential
+EOF
+COPY . /src
+RUN make -C /src
+
+FROM debian:12-slim
+COPY --from=build /src/out /app
+CMD ["/app"]
+
+
+
