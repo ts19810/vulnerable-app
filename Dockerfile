@@ -41,16 +41,25 @@
 
 
 
-FROM maven:3.9-eclipse-temurin-21 AS build
-WORKDIR /app
-COPY pom.xml .
-RUN mvn -B dependency:go-offline
-COPY src ./src
-RUN mvn -B -DskipTests package           # target/app.jar needs ./src (stripped)
+#FROM maven:3.9-eclipse-temurin-21 AS build
+#WORKDIR /app
+#COPY pom.xml .
+#RUN mvn -B dependency:go-offline
+#COPY src ./src
+#RUN mvn -B -DskipTests package           # target/app.jar needs ./src (stripped)
 
-FROM eclipse-temurin:21-jre
-COPY --from=build /app/target/app.jar /app.jar   # ❌ jar never produced
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+#FROM eclipse-temurin:21-jre
+#COPY --from=build /app/target/app.jar /app.jar   # ❌ jar never produced
+#ENTRYPOINT ["java", "-jar", "/app.jar"]
+#----------------
 
+FROM python:3.12 AS build
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+FROM python:3.12-slim
+COPY --from=build /usr/local /usr/local
+ADD https://internal.example.com/models/model-v3.tar.gz /opt/model/   # ❌ host gone / 404
+CMD ["python", "app.py"]
 
 
