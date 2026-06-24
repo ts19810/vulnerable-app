@@ -27,13 +27,30 @@
 
 #-------------------------
 
-FROM golang:1.22 AS build
-WORKDIR /src
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
-RUN go build -o /out/app ./...           # /out/app needs the stripped source
+#FROM golang:1.22 AS build
+#WORKDIR /src
+#COPY go.mod go.sum ./
+#RUN go mod download
+#COPY . .
+#RUN go build -o /out/app ./...           # /out/app needs the stripped source
 
-FROM gcr.io/distroless/base-debian12
-COPY --from=build /out/app /app          # ❌ /out/app missing
-ENTRYPOINT ["/app"]
+#FROM gcr.io/distroless/base-debian12
+#COPY --from=build /out/app /app          # ❌ /out/app missing
+#ENTRYPOINT ["/app"]
+#---------------
+
+
+
+FROM maven:3.9-eclipse-temurin-21 AS build
+WORKDIR /app
+COPY pom.xml .
+RUN mvn -B dependency:go-offline
+COPY src ./src
+RUN mvn -B -DskipTests package           # target/app.jar needs ./src (stripped)
+
+FROM eclipse-temurin:21-jre
+COPY --from=build /app/target/app.jar /app.jar   # ❌ jar never produced
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+
+
+
