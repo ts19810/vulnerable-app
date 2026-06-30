@@ -1,12 +1,5 @@
-FROM node:22-alpine AS deps
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
- 
-# ---------- 2) Build ----------
-FROM node:22-alpine AS builder
-WORKDIR /app
- 
+FROM debian:12 AS build
+
 # Build-time args (only needed during build)
 ARG SHOW_AUTH_LINKS
 ARG SHOW_PRICING_LINK
@@ -31,26 +24,11 @@ ENV SHOW_AUTH_LINKS=$SHOW_AUTH_LINKS \
     SANITY_DATASET=$SANITY_DATASET \
     SANITY_PROJECT_ID=$SANITY_PROJECT_ID
 
- 
-COPY package.json package-lock.json ./
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-ARG NODE_OPTIONS="--max-old-space-size=4096"
-ENV NODE_OPTIONS=$NODE_OPTIONS
-RUN npm run build
- 
-# ---------- 3) Prod deps only ----------
-FROM node:22-alpine AS prod-deps
-WORKDIR /app
-COPY package.json package-lock.json ./
-# install *only* production deps with the same peer bypass
-RUN npm ci --omit=dev
- 
-# ---------- 4) Runner ----------
-FROM node:22-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
- 
+RUN <<EOF
+apt-get update
+apt-get install -y build-essential
+EOF
+COPY . /src
 # COPY --from=builder /app/.next ./.next
 # # COPY --from=builder /app/public ./public
 # COPY --from=builder /app/package.json /app/package-lock.json ./
@@ -58,12 +36,8 @@ ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
 
 # COPY --from=builder /app/.next/standalone ./
 # COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/.next ./.next
-# COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json /app/package-lock.json ./
-COPY --from=prod-deps /app/node_modules ./node_modules
+RUN make -C /src
 
- 
-EXPOSE 8080
-# ensure package.json has: "start": "next start -p 8080"
-CMD ["npm", "start"]
+FROM debian:12-slim
+COPY --from=build /src/out /app
+CMD ["/app"]
